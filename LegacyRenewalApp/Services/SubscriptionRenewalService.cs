@@ -8,24 +8,28 @@ namespace LegacyRenewalApp
         private readonly ISubscriptionPlanRepository _subscriptionPlanRepository;
         private readonly IDiscountCalculator _discountCalculator;
         private readonly ISupportFeeCalculator _supportFeeCalculator;
+        private readonly IPaymentFeeCalculator _paymentFeeCalculator;
         
         // Default for LegacyRenewalAppConsumer
         public SubscriptionRenewalService() : this(
             new CustomerRepository(), 
             new SubscriptionPlanRepository(), 
             new DiscountCalculator(),
-            new SupportFeeCalculator()) {}
+            new SupportFeeCalculator(),
+            new PaymentFeeCalculator()) {}
 
         public SubscriptionRenewalService(
             ICustomerRepository customerRepository,
             ISubscriptionPlanRepository subscriptionPlanRepository,
             IDiscountCalculator discountCalculator,
-            ISupportFeeCalculator supportFeeCalculator)
+            ISupportFeeCalculator supportFeeCalculator,
+            IPaymentFeeCalculator paymentFeeCalculator)
         {
             _customerRepository = customerRepository;
             _subscriptionPlanRepository = subscriptionPlanRepository;
             _discountCalculator = discountCalculator;
             _supportFeeCalculator = supportFeeCalculator;
+            _paymentFeeCalculator = paymentFeeCalculator;
         }
         
         public RenewalInvoice CreateRenewalInvoice(
@@ -86,31 +90,9 @@ namespace LegacyRenewalApp
                 notes += "premium support included; ";
             }
 
-            decimal paymentFee = 0m;
-            if (normalizedPaymentMethod == "CARD")
-            {
-                paymentFee = (subtotalAfterDiscount + supportFee) * 0.02m;
-                notes += "card payment fee; ";
-            }
-            else if (normalizedPaymentMethod == "BANK_TRANSFER")
-            {
-                paymentFee = (subtotalAfterDiscount + supportFee) * 0.01m;
-                notes += "bank transfer fee; ";
-            }
-            else if (normalizedPaymentMethod == "PAYPAL")
-            {
-                paymentFee = (subtotalAfterDiscount + supportFee) * 0.035m;
-                notes += "paypal fee; ";
-            }
-            else if (normalizedPaymentMethod == "INVOICE")
-            {
-                paymentFee = 0m;
-                notes += "invoice payment; ";
-            }
-            else
-            {
-                throw new ArgumentException("Unsupported payment method");
-            }
+            var paymentFeeResult =
+                _paymentFeeCalculator.Calculate(normalizedPaymentMethod, subtotalAfterDiscount, supportFee, notes);
+            decimal paymentFee = paymentFeeResult.PaymentFee;
 
             decimal taxRate = 0.20m;
             if (customer.Country == "Poland")

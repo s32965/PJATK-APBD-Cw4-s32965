@@ -7,18 +7,25 @@ namespace LegacyRenewalApp
         private readonly ICustomerRepository _customerRepository;
         private readonly ISubscriptionPlanRepository _subscriptionPlanRepository;
         private readonly IDiscountCalculator _discountCalculator;
+        private readonly ISupportFeeCalculator _supportFeeCalculator;
         
         // Default for LegacyRenewalAppConsumer
-        public SubscriptionRenewalService() : this(new CustomerRepository(), new SubscriptionPlanRepository(), new DiscountCalculator()) {}
+        public SubscriptionRenewalService() : this(
+            new CustomerRepository(), 
+            new SubscriptionPlanRepository(), 
+            new DiscountCalculator(),
+            new SupportFeeCalculator()) {}
 
         public SubscriptionRenewalService(
             ICustomerRepository customerRepository,
             ISubscriptionPlanRepository subscriptionPlanRepository,
-            IDiscountCalculator discountCalculator)
+            IDiscountCalculator discountCalculator,
+            ISupportFeeCalculator supportFeeCalculator)
         {
             _customerRepository = customerRepository;
             _subscriptionPlanRepository = subscriptionPlanRepository;
             _discountCalculator = discountCalculator;
+            _supportFeeCalculator = supportFeeCalculator;
         }
         
         public RenewalInvoice CreateRenewalInvoice(
@@ -73,22 +80,9 @@ namespace LegacyRenewalApp
                 notes += "minimum discounted subtotal applied; ";
             }
 
-            decimal supportFee = 0m;
+            decimal supportFee = _supportFeeCalculator.Calculate(includePremiumSupport, normalizedPlanCode);
             if (includePremiumSupport)
             {
-                if (normalizedPlanCode == "START")
-                {
-                    supportFee = 250m;
-                }
-                else if (normalizedPlanCode == "PRO")
-                {
-                    supportFee = 400m;
-                }
-                else if (normalizedPlanCode == "ENTERPRISE")
-                {
-                    supportFee = 700m;
-                }
-
                 notes += "premium support included; ";
             }
 

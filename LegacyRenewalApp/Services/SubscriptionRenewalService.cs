@@ -1,4 +1,6 @@
 using System;
+using LegacyRenewalApp.Exceptions;
+using LegacyRenewalApp.Validators;
 
 namespace LegacyRenewalApp
 {
@@ -10,6 +12,7 @@ namespace LegacyRenewalApp
         private readonly ISupportFeeCalculator _supportFeeCalculator;
         private readonly IPaymentFeeCalculator _paymentFeeCalculator;
         private readonly ITaxRateCalculator _taxRateCalculator;
+        private readonly IRenewalRequestValidator _renewalRequestValidator;
         
         // Default for LegacyRenewalAppConsumer
         public SubscriptionRenewalService() : this(
@@ -18,7 +21,8 @@ namespace LegacyRenewalApp
             new DiscountCalculator(),
             new SupportFeeCalculator(),
             new PaymentFeeCalculator(),
-            new TaxRateCalculator()) {}
+            new TaxRateCalculator(),
+            new RenewalRequestValidator()) {}
 
         public SubscriptionRenewalService(
             ICustomerRepository customerRepository,
@@ -26,7 +30,8 @@ namespace LegacyRenewalApp
             IDiscountCalculator discountCalculator,
             ISupportFeeCalculator supportFeeCalculator,
             IPaymentFeeCalculator paymentFeeCalculator,
-            ITaxRateCalculator taxRateCalculator)
+            ITaxRateCalculator taxRateCalculator,
+            IRenewalRequestValidator renewalRequestValidator)
         {
             _customerRepository = customerRepository;
             _subscriptionPlanRepository = subscriptionPlanRepository;
@@ -34,6 +39,7 @@ namespace LegacyRenewalApp
             _supportFeeCalculator = supportFeeCalculator;
             _paymentFeeCalculator = paymentFeeCalculator;
             _taxRateCalculator = taxRateCalculator;
+            _renewalRequestValidator = renewalRequestValidator;
         }
         
         public RenewalInvoice CreateRenewalInvoice(
@@ -44,25 +50,7 @@ namespace LegacyRenewalApp
             bool includePremiumSupport,
             bool useLoyaltyPoints)
         {
-            if (customerId <= 0)
-            {
-                throw new ArgumentException("Customer id must be positive");
-            }
-
-            if (string.IsNullOrWhiteSpace(planCode))
-            {
-                throw new ArgumentException("Plan code is required");
-            }
-
-            if (seatCount <= 0)
-            {
-                throw new ArgumentException("Seat count must be positive");
-            }
-
-            if (string.IsNullOrWhiteSpace(paymentMethod))
-            {
-                throw new ArgumentException("Payment method is required");
-            }
+            _renewalRequestValidator.Validate(customerId, planCode, seatCount, paymentMethod);
 
             string normalizedPlanCode = planCode.Trim().ToUpperInvariant();
             string normalizedPaymentMethod = paymentMethod.Trim().ToUpperInvariant();

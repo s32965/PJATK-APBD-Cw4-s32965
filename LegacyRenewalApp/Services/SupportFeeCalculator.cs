@@ -1,23 +1,24 @@
+using System.Collections.Generic;
+
 namespace LegacyRenewalApp;
 
 public class SupportFeeCalculator : ISupportFeeCalculator
 {
+    private static readonly Dictionary<string, decimal> SupportFeeDatabase = new Dictionary<string, decimal>
+    {
+        { "START", 250m },
+        { "PRO", 400m },
+        { "ENTERPRISE", 700m },
+    };
+    
     public decimal Calculate(bool includePremiumSupport, string normalizedPlanCode)
     {
         decimal supportFee = 0m;
         if (includePremiumSupport)
         {
-            if (normalizedPlanCode == "START")
+            if (SupportFeeDatabase.ContainsKey(normalizedPlanCode))
             {
-                supportFee = 250m;
-            }
-            else if (normalizedPlanCode == "PRO")
-            {
-                supportFee = 400m;
-            }
-            else if (normalizedPlanCode == "ENTERPRISE")
-            {
-                supportFee = 700m;
+                supportFee = SupportFeeDatabase[normalizedPlanCode];    
             }
         }
         return supportFee;

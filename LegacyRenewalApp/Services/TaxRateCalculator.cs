@@ -1,24 +1,22 @@
+using System.Collections.Generic;
+
 namespace LegacyRenewalApp;
 
 public class TaxRateCalculator : ITaxRateCalculator
 {
+    private static readonly Dictionary<string, decimal> Database = new Dictionary<string, decimal>
+    {
+        {"Poland", 0.23m},
+        {"Germany", 0.19m},
+        {"Czech Republic", 0.21m},
+        {"Norway", 0.25m}
+    };
+    
     public decimal Calculate(Customer customer)
     {
-        if (customer.Country == "Poland")
+        if (Database.ContainsKey(customer.Segment))
         {
-            return 0.23m;
-        }
-        else if (customer.Country == "Germany")
-        {
-            return 0.19m;
-        }
-        else if (customer.Country == "Czech Republic")
-        {
-            return 0.21m;
-        }
-        else if (customer.Country == "Norway")
-        {
-            return 0.25m;
+            return Database[customer.Segment];
         }
         return 0.20m;
     }

@@ -1,9 +1,18 @@
 using System;
+using System.Collections.Generic;
 
 namespace LegacyRenewalApp;
 
 public class PaymentFeeCalculator : IPaymentFeeCalculator
 {
+    private static readonly Dictionary<string, List<object>> PaymentFeeDatabase = new Dictionary<string, List<object>>
+    {
+        { "CARD", new List<object> {0.02m, "card payment fee; "} },
+        { "BANK_TRANSFER", new List<object> {0.01m, "bank transfer fee; "} },
+        { "PAYPAL", new List<object> {0.035m, "paypal fee; "} },
+        { "INVOICE", new List<object> {0m, "invoice payment; "} }
+    };
+    
     public PaymentFeeResult Calculate(
         string normalizedPaymentMethod, 
         decimal subtotalAfterDiscount, 
@@ -12,25 +21,10 @@ public class PaymentFeeCalculator : IPaymentFeeCalculator
     {
         decimal paymentFee = 0m;
         
-        if (normalizedPaymentMethod == "CARD")
+        if (PaymentFeeDatabase.ContainsKey(normalizedPaymentMethod))
         {
-            paymentFee = (subtotalAfterDiscount + supportFee) * 0.02m;
-            notes += "card payment fee; ";
-        }
-        else if (normalizedPaymentMethod == "BANK_TRANSFER")
-        {
-            paymentFee = (subtotalAfterDiscount + supportFee) * 0.01m;
-            notes += "bank transfer fee; ";
-        }
-        else if (normalizedPaymentMethod == "PAYPAL")
-        {
-            paymentFee = (subtotalAfterDiscount + supportFee) * 0.035m;
-            notes += "paypal fee; ";
-        }
-        else if (normalizedPaymentMethod == "INVOICE")
-        {
-            paymentFee = 0m;
-            notes += "invoice payment; ";
+            paymentFee = (subtotalAfterDiscount + supportFee) * (decimal) PaymentFeeDatabase[normalizedPaymentMethod][0];
+            notes += PaymentFeeDatabase[normalizedPaymentMethod][1];
         }
         else
         {
